@@ -106,7 +106,7 @@ class TrialRunner(QObject):
         try:
             arduino['device'] = serial.Serial(p['device'], 19200)
             arduino['device'].timeout = 1
-            connect_attempts = 3
+            connect_attempts = 1
             current_attempt = 1
             while arduino['connected'] is False and current_attempt <= connect_attempts:
                 temp_read = arduino['device'].readline().strip().decode('utf-8')
@@ -114,6 +114,7 @@ class TrialRunner(QObject):
                 if temp_read == '{READY}':
                     arduino['connected'] = True
                     self.arduino_connected_signal.emit()
+                    arduino['device'].timeout = 0.05
                 else:
                     current_attempt += 1
                 if current_attempt > connect_attempts:
@@ -484,7 +485,7 @@ class MainWindow(QMainWindow, GUI.Ui_MainWindow):
         s,ms = divmod(elapsed_time, 1000)
         m, s = divmod(s, 60)
         h, m = divmod(m, 60)
-        self.sessionTimer_label.setText('%d:%02d:%02d:%d' % (h, m, s, int(ms/100)))
+        self.sessionTimer_label.setText('%d:%02d:%02d.%d' % (h, m, s, int(ms/100)))
 
     def begin(self):
         if self.trialRunner._session_running is False:
@@ -561,7 +562,7 @@ class MainWindow(QMainWindow, GUI.Ui_MainWindow):
 
         # reset reaction time hists
         self.hist_bins = np.arange(0, p['trialDuration'], 0.1)
-        counts,edges = np.histogram(trials['reaction_time'], bins=self.hist_bins)
+        counts,edges = np.histogram(trials['reaction_time'], bins=self.hist_bins, range=[np.nanmin(self.hist_bins), np.nanmax(self.hist_bins)])
 
         for stim in range(NUM_STIMS):
             self.reactionTimeHists[stim].set_xy(np.empty([1,2]))
@@ -1031,7 +1032,8 @@ class MainWindow(QMainWindow, GUI.Ui_MainWindow):
                         if len(p['trialOrder']) < num_trials:
                             diff = p['sessionDuration'] - len(p['trialOrder'])
                             xk = p['stimChannels']
-                            pk = p['proportions']
+                            pk = np.array(p['proportions'])
+                            pk = pk / pk.sum()
                             custm = stats.rv_discrete(name='custm', values=(xk, pk))
                             extra_trials = custm.rvs(size=diff)
                             p['trialOrder'] = np.append(p['trialOrder'], extra_trials)
