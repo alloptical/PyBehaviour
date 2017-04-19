@@ -5413,7 +5413,7 @@ QGroupBox#trial_GroupBox::title {
                            <number>2</number>
                           </property>
                           <item>
-                           <widget class="QCheckBox" name="checkBox_2">
+                           <widget class="QCheckBox" name="autoForceReward_checkBox">
                             <property name="enabled">
                              <bool>true</bool>
                             </property>
@@ -5429,40 +5429,28 @@ QGroupBox#trial_GroupBox::title {
                            </widget>
                           </item>
                           <item>
-                           <widget class="QDoubleSpinBox" name="doubleSpinBox_3">
+                           <widget class="QSpinBox" name="autoForceRewardAfter_spinBox">
                             <property name="enabled">
                              <bool>false</bool>
-                            </property>
-                            <property name="prefix">
-                             <string>After: </string>
                             </property>
                             <property name="suffix">
                              <string> incorrect trials</string>
                             </property>
-                            <property name="decimals">
-                             <number>0</number>
-                            </property>
-                            <property name="minimum">
-                             <double>1.000000000000000</double>
+                            <property name="prefix">
+                             <string>After: </string>
                             </property>
                            </widget>
                           </item>
                           <item>
-                           <widget class="QDoubleSpinBox" name="doubleSpinBox_4">
+                           <widget class="QSpinBox" name="autoForceRewardFor_spinBox">
                             <property name="enabled">
                              <bool>false</bool>
-                            </property>
-                            <property name="prefix">
-                             <string>For the next: </string>
                             </property>
                             <property name="suffix">
                              <string> trials</string>
                             </property>
-                            <property name="decimals">
-                             <number>0</number>
-                            </property>
-                            <property name="minimum">
-                             <double>1.000000000000000</double>
+                            <property name="prefix">
+                             <string>For the next: </string>
                             </property>
                            </widget>
                           </item>
@@ -8625,38 +8613,6 @@ QGroupBox::title {
     <hint type="destinationlabel">
      <x>730</x>
      <y>1195</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox_2</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>doubleSpinBox_3</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>249</x>
-     <y>1098</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>494</x>
-     <y>1096</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox_2</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>doubleSpinBox_4</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>249</x>
-     <y>1098</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>738</x>
-     <y>1096</y>
     </hint>
    </hints>
   </connection>

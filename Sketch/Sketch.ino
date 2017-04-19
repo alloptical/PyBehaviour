@@ -2,7 +2,7 @@
 // PyBehaviour            //
 // (c) 2015 Lloyd Russell //
 ////////////////////////////
-// 2017.02.23.1
+// 2017.03.17.1
 
 #include "elapsedMillis.h"
 #include "TaskScheduler.h"
@@ -32,7 +32,7 @@ Scheduler taskManager;
 elapsedMillis witholdTimer;
 
 // pin numbers
-const int responsePin[] = {0, 1}; // interrupt numbers 0:2 1:3 [2:21 do not use] 3:20
+const int responsePin[] = {2, 3}; // interrupt:pin numbers 0:2 1:3 [2:21 do not use?] 3:20
 const int stimPin[] = {30,31,32,33,34,35,36,37};
 const int rewardPin[] = {4, 5};
 const int rewardRemovalPin[] = {8, 9};
@@ -100,34 +100,34 @@ bool inResponseWindow;
 bool inWithold;
 
 // response states
-bool responded = false;
-bool rewarded = false;
-bool punished = false;
-bool cancelled = false;
+volatile bool responded = false;
+volatile bool rewarded = false;
+volatile bool punished = false;
+volatile bool cancelled = false;
 volatile int firstResponse = 0;
 
 // record times
 int preTrialDelayStart;
 long startTime;
 long now;
-int timeRewarded;
-int timePunished;
+volatile int timeRewarded;
+volatile int timePunished;
 String dataString;
-int lengthDataString;
+volatile int lengthDataString;
 String newDataString;
 String txString;
 String comString;
 String resultsString;
-int responseNum;
+volatile int responseNum;
 volatile long timeResponded;
 volatile long prevTimeResponded;
-long currentTime;
+volatile long currentTime;
 
 // results
-bool correct;
-bool incorrect;
-bool miss;
-bool cheated;
+volatile bool correct;
+volatile bool incorrect;
+volatile bool miss;
+volatile bool cheated;
 volatile bool resultsTransmitted;
 
 
@@ -140,11 +140,11 @@ void setup() {
   Serial.println("{READY}");
   delay(10);
 
+  // set all pins as output
   for ( int i = 0; i < 54; ++i ) {
     pinMode(i, OUTPUT);
     digitalWrite(i, LOW);
   }
- 
 }
 
 
@@ -357,7 +357,7 @@ void configTrial() {
   // set(delay, repeat, function)
   taskManager.init();
 
-  tTransmit.set(200, -1, &txData);
+  tTransmit.set(50, -1, &txData);
   tCueOn.set(0, 0, &cueOn);
   tCueOff.set(50, 0, &cueOff);
   tStimStart.set(stimStartTime, 1, &stimOn);
@@ -373,21 +373,21 @@ void configTrial() {
   tPunishOff.set(punishTriggerDuration, 1, &punishOff);
   tEndTrial.set(trialDuration, 1, &stopTasks);
 
-  tTransmit.disableOnLastIteration(true);
-  tCueOn.disableOnLastIteration(false);
-  tCueOff.disableOnLastIteration(false);
-  tStimStart.disableOnLastIteration(true);
-  tStimStop.disableOnLastIteration(true);
-  tResponseWindowOpen.disableOnLastIteration(true);
-  tResponseWindowClose.disableOnLastIteration(true);
-  tRewardOn.disableOnLastIteration(true);
-  tRewardOff.disableOnLastIteration(true);
-  tAutoReward.disableOnLastIteration(true);
-  tRewardRemovalOn.disableOnLastIteration(true);
-  tRewardRemovalOff.disableOnLastIteration(true);
-  tPunishOn.disableOnLastIteration(true);
-  tPunishOff.disableOnLastIteration(true);
-  tEndTrial.disableOnLastIteration(true);
+  // tTransmit.disableOnLastIteration(true);
+  // tCueOn.disableOnLastIteration(false);
+  // tCueOff.disableOnLastIteration(false);
+  // tStimStart.disableOnLastIteration(true);
+  // tStimStop.disableOnLastIteration(true);
+  // tResponseWindowOpen.disableOnLastIteration(true);
+  // tResponseWindowClose.disableOnLastIteration(true);
+  // tRewardOn.disableOnLastIteration(true);
+  // tRewardOff.disableOnLastIteration(true);
+  // tAutoReward.disableOnLastIteration(true);
+  // tRewardRemovalOn.disableOnLastIteration(true);
+  // tRewardRemovalOff.disableOnLastIteration(true);
+  // tPunishOn.disableOnLastIteration(true);
+  // tPunishOff.disableOnLastIteration(true);
+  // tEndTrial.disableOnLastIteration(true);
 
   taskManager.addTask(tRewardOn); // pseudo priority
   taskManager.addTask(tTransmit);
@@ -414,8 +414,8 @@ void configTrial() {
 
 void runTrial() {
   startTime = millis();
-  attachInterrupt(responsePin[0], response1, RISING);
-  attachInterrupt(responsePin[1], response2, RISING);
+  attachInterrupt(digitalPinToInterrupt(responsePin[0]), response1, RISING);
+  attachInterrupt(digitalPinToInterrupt(responsePin[1]), response2, RISING);
   //attachInterrupt(responsePin[2], response3, RISING);
   trialRunning = true;
   digitalWrite(trialRunningPin, HIGH);
@@ -534,12 +534,13 @@ void processResponse(int responseNum) {
         firstResponse = responseNum;
         responded = true;
         if (responseNum == responseRequired) {  // correct choice
-          if ((!rewarded) && !(punished && !secondChance)) {
+          if ((!rewarded) && !(incorrect && !secondChance)) {
             tRewardOn.enable();
             txResults();
           }
         }
         else {  // else must be incorrect
+          incorrect = true;
           if ((!punished) && (!rewarded)) {
             if (punishTrigger) {
               tPunishOn.enable();
@@ -603,7 +604,9 @@ void rewardOn() {
 }
 
 void autoRewardOn() {
-  tRewardOn.enable();
+  if ((!rewarded) && !(incorrect && !secondChance)) {
+    tRewardOn.enable();
+  }
 }
 
 void rewardOff() {
@@ -705,7 +708,7 @@ void txResults() {
     resultsString.concat("|cheated:");
     resultsString.concat(cheated);
     resultsString.concat("}");
-    delay(100);
+    // delay(100);
     Serial.println(resultsString);
 
   }
